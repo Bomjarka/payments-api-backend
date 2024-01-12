@@ -36,5 +36,20 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });
+
+        RateLimiter::for('awesomepay', function () {
+            return Limit::perDay(config('awesomepay.limit'));
+        });
+        RateLimiter::for('scarypay', function () {
+            return Limit::perDay(config('scarypay.limit'));
+        });
+
+        RateLimiter::for('payment', function (Request $request) {
+            return match ($request->getContentTypeFormat()) {
+                'json' => Limit::perDay(config('awesomepay.limit')),
+                'form' => Limit::perDay(config('scarypay.limit')),
+                default => throw new \Exception('Unsupported content type: ' . request()->getContentTypeFormat()),
+            };
+        });
     }
 }
